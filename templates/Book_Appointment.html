@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="/static/css/mdb.min.css">
+  <link rel="stylesheet" href="/static/css/main.css">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src='/static/js/main.js'></script>
+  <script src="/static/js/mdb.min.js"></script>
+  <script src="/static/js/index.js"></script>
+  <style>
+ 
+    
+ .form-outline .form-control {
+  border: 1px solid #bdbdbd !important;
+ }
+
+    .form-control, .btn-primary {
+    font-size:15px;
+    }
+    
+    .nav-link {
+    color:white !important;
+    }
+    
+    .nav-item {
+      padding: 0 10px 0 10px;
+    }
+    
+    
+
+    .nav-item.active a{
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    .card {
+    margin:10px;
+    }
+    
+    .card-text
+    {
+    font-size:12px;
+    margin-top:10px !important;
+    }
+    
+    .card-text span{
+     color:#757575!important;
+     
+    }
+    .card-title {
+    font-weight:bold;
+    }
+    .card-body a{
+    font-size:12px;
+    }
+    
+    h2{
+    
+       font-weight: bold;
+       padding-top: 20px;
+     padding-bottom: 20px;
+     color:#0c56d0;
+    }
+    
+    h3{
+      font-size: 17px !important;
+    font-weight: bold;
+    padding-top: 14px;
+    padding-bottom: 15px;
+    text-decoration: underline;
+ }
+
+    .border {
+
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 7%), 0 4px 6px -2px rgb(0 0 0 / 5%)
+    }
+     
+
+    .available
+    {
+        border:1px solid #69196c;
+        background: green url(holiday.png) 50% top repeat-x; 
+        color: white;   
+    }
+    #calendar {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .fc .fc-bg-event{
+      background: var(--fc-bg-event-color, rgb(0, 128, 0)) !important;
+    }
+  
+  </style>
+  <script type="text/javascript">
+    function getFormattedDate(date) {
+      var year = date.getFullYear();
+      var month = (1 + date.getMonth()).toString();
+      month = month.length > 1 ? month : '0' + month;
+      var day = date.getDate().toString();
+      day = day.length > 1 ? day : '0' + day;      
+      return month + '/' + day + '/' + year;
+  }
+
+  function PopulatePatientBookings(bookings)
+  {
+
+  }
+
+  function ConfirmBooking(booking_date,button_ele)
+  {
+    $.ajax({
+            url: '/confirm-booking',
+            type: 'POST',
+            data: {
+              provider_id: '{{ provider.ProviderId }}',
+              patient_id: '{{ patient[0]["PatientId"] }}',
+              booking_date : booking_date
+            },
+            success: function(data) {
+                  renderCalendar(data.events);  
+                  HandleBookingsTable(data.patient_bookings_str);
+                  $(button_ele).closest('#model-booking-confirm').hide();    
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+  }
+  function CancelBooking(booking_date,button_ele)
+  {
+    $.ajax({
+            url: '/cancel-booking',
+            type: 'POST',
+            data: {
+              provider_id: '{{ provider.ProviderId }}',
+              patient_id: '{{ patient[0]["PatientId"] }}',
+              booking_date : booking_date
+            },
+            success: function(data) {
+                  renderCalendar(data.events);  
+                  HandleBookingsTable(data.patient_bookings_str);
+                  //$(button_ele).closest('.modal-dialog').hide();       
+                                      
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+  }
+  function decodeHtml(html) {
+    var txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+}
+  function HandleBookingsTable(patient_bookings_str)
+  {
+    if(patient_bookings_str == '')
+    {
+      $('#empty-bookings').show();
+      $('#table-bookings').hide();
+    }
+    else
+    {
+      var html = decodeHtml(patient_bookings_str);      
+      $('#patient-bookings-html').html(html); 
+      BindCancelBookingAction();
+      $('#empty-bookings').hide();
+      $('#table-bookings').show();
+    }
+  }
+  
+  function dateSelected(date)
+  {
+      var selectedDate = getFormattedDate(date) + ' @ ' + date.toLocaleTimeString('en-US')
+      var selectedDateFormatted = getFormattedDate(date) + ' ' + date.toLocaleTimeString('en-US')
+      $('#model-booking-confirm-message').html(selectedDate);
+      $('#model-confirm-booking-button').attr('booking-date',selectedDateFormatted)
+      $('#model-booking-confirm').show()
+  }
+
+  function renderCalendar(available_dates)
+  {
+    var calendarEl = document.getElementById('calendar');
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      headerToolbar: {
+        left: 'prevYear,prev,next,nextYear today',
+        center: 'title',
+        right: 'dayGridMonth,dayGridWeek,dayGridDay'
+      },
+      dateClick: function(info) {        
+        dateSelected(info.date)
+      },
+      
+      initialView: 'timeGridWeek',
+      slotMinTime: '09:00:00',
+      slotMaxTime: '17:00:00',
+      initialDate: '{{ initial_date }}',
+      expandRows: true,
+      navLinks: true, // can click day/week names to navigate views
+      editable: true,
+      dayMaxEvents: true,
+      events: available_dates 
+    });
+
+    calendar.render();
+  }
+
+  function BindCancelBookingAction()
+  {
+    $('#model-cancel-booking-button').each(function(){
+        $(this).click(function(){
+          var self = this;
+          var booking_date = $(this).attr('booking-date');
+          CancelBooking(booking_date, self);
+      });
+    });
+  }
+
+
+
+  
+document.addEventListener('DOMContentLoaded', function() {
+  $(document).ready(function(){
+    $('#model-booking-close-button').click(function(){
+      $(this).closest('#model-booking-confirm').hide();
+    });
+
+    $('#model-booking-close-button').each(function(){
+        $(this).click(function(){
+          $('#model-booking-confirm').hide();
+        });
+    })
+
+    $('#model-view-booking-close-button-x').click(function(){
+      $('#view-confirmed-bookings-model').hide();
+    });
+
+    $('#model-view-booking-close-button-cancel').click(function(){
+      $('#view-confirmed-bookings-model').hide();
+    });
+    
+
+    $('#model-confirm-booking-button').click(function(){
+      var self = this;
+      var booking_date = $(this).attr('booking-date');
+      ConfirmBooking(booking_date, self);
+    });    
+
+    $.ajax({
+            url: '/provider-availability/' + '{{ provider.ProviderId }}',
+            type: 'GET',
+            success: function(data) {
+                  renderCalendar(data.events);
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+      HandleBookingsTable('{{ patient_bookings_str }}');
+      $('#view-confirmed-bookings').click(function(e){
+          $('#view-confirmed-bookings-model').show();
+      });
+  });
+  });
+  </script>
+ <!--Main Navigation-->
+<header style="background-color:gray">
+
+  
+  <nav class="navbar navbar-expand-lg navbar-dark default-color">
+    <img id="dimg_1" src="data:image/jpeg;base64,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" class="rISBZc M4dUYb" height="53" style="margin-top:-2px" width="60" alt="Image result for ecu logo png" data-atf="1" data-frt="0">
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto" >
+        <li class="nav-item active">
+          <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+        </li>
+        
+        <li class="nav-item">
+          <a class="nav-link" href="#">About Us</a>
+        </li> 
+      </ul>
+	 
+    </div>
+    <div class="container" style="justify-content:right">
+      {% if (error == '') %}
+      <a class="nav-link" href="#">{{ patient[0]["FirstName"] }}  {{ patient[0]["LastName"] }}</a>
+      {% endif %}
+   </div>
+ </div>
+  </nav>
+
+</header>
+<!--Main Navigation-->
+
+{% if (error != '') %}
+    <span>{{ error }} </span>
+{% else %}
+  <div class="container">
+    <form class="border border-light p-5">
+      <p class="h4 mb-4 text-center">Book an Appointment</p>
+      <!-- 2 column grid layout with text inputs for the first and last names -->
+    
+      <div class="card" style="display:flex;flex-direction:row;flex-wrap:wrap;">
+        <div class="card-body">
+          <h5 class="card-title">{{ provider["FirstName"] }} {{ provider["LastName"] }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">{{ provider["ServiceCategoryName"] }}</h6> 
+        
+        </div>
+        <div class="card-body">
+          <p class="card-text"><span>LOCATION</span><br>{{ provider["Address"] }} </p>
+        
+        </div>
+        <div class="card-body">
+          <p class="card-text"><span>CONTACT INFORMATION </span> </br> Phone: {{ provider["Phone"] }} </br> Email: {{ provider["Email"] }}  </p>
+
+        </div>
+
+      </div>
+      <div class="form-outline mb-4" style="text-align: center;color:green">
+        ** Please select green dates below from the calendar to book an apppointment
+      </div>
+      <div class="form-outline mb-4" style="text-align: center;">
+        <span>
+        <button id="view-confirmed-bookings" type="button" class="btn btn-primary btn-block mb-4">View Confirmed Bookings</button>
+      </span>
+      </div>
+    <!-- Message input -->
+    <div class="form-outline mb-4" style="text-align: center;">
+      <div id='calendar'></div>
+      
+    </div>
+
+      <!-- Submit button -->
+    
+    </form>
+  </div>
+{% endif %}
+
+
+<div id="view-confirmed-bookings-model" class="modal fade show" id="exampleCentralModal2" tabindex="-1" aria-labelledby="exampleModalLabel" aria-modal="true" role="dialog" data-gtm-vis-recent-on-screen-2340190_1302="549395" data-gtm-vis-first-on-screen-2340190_1302="549395" data-gtm-vis-total-visible-time-2340190_1302="100" data-gtm-vis-has-fired-2340190_1302="1" >
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Current Bookings</h5>
+        <button id="model-view-booking-close-button-x" type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <span id="empty-bookings"> No confirmed bookings available at this time.</span>
+        <table id="table-bookings" class="table table-hover">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Booking Date</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+          <tbody id="patient-bookings-html">
+            
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button id="model-view-booking-close-button-cancel" class="btn btn-outline-primary" data-mdb-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Vertically centered scrollable modal -->
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+  <div id="model-booking-confirm" class="modal" tabindex="-1" >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Booking</h5>
+          <button id="model-booking-close-button" type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="border-bottom: 1px solid #e0e0e0;">
+          <p style="text-align: center;">Are you sure you want to confirm the booking on </p>
+          <p id="model-booking-confirm-message" style="text-align: center;font-weight: bold;"></p>
+        </div>
+        <div class="modal-footer">
+          <button id="model-booking-close-button" type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Close</button>
+          <button id="model-confirm-booking-button" type="button" class="btn btn-primary">Confirm Booking</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html> 

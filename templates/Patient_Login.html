@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="/static/css/mdb.min.css">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script type="text/javascript" src="/static/js/index.js"></script>
+  <style>
+ 
+ 
+    
+    
+    .form-control, .btn-primary {
+    font-size:15px;
+    }
+    
+    .nav-link {
+    color:white !important;
+    }
+    
+    .nav-item {
+      padding: 0 10px 0 10px;
+    }
+    
+    
+
+    .nav-item.active a{
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    .card {
+    margin:10px;
+    width:20%;
+    }
+    
+    .card-text
+    {
+    font-size:12px;
+    margin-top:10px !important;
+    }
+    
+    .card-text span{
+     color:#757575!important;
+     
+    }
+    .card-title {
+    font-weight:bold;
+    }
+    .card-body a{
+    font-size:12px;
+    }
+    
+    h2{
+    
+       font-weight: bold;
+       padding-top: 20px;
+     padding-bottom: 20px;
+     color:#0c56d0;
+    }
+    
+    .border {
+
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 7%), 0 4px 6px -2px rgb(0 0 0 / 5%)
+    }
+
+    #patient-login-result {
+      font-style: italic;
+      color: red;
+    }
+    
+    </style>
+  
+ <!--Main Navigation-->
+<header style="background-color:gray">
+
+  
+  <nav class="navbar navbar-expand-lg navbar-dark default-color">
+    <img id="dimg_1" src="data:image/jpeg;base64,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" class="rISBZc M4dUYb" height="53" style="margin-top:-2px" width="60" alt="Image result for ecu logo png" data-atf="1" data-frt="0">
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto" >
+        <li class="nav-item active">
+          <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+        </li>
+        
+        <li class="nav-item">
+          <a class="nav-link" href="#">About Us</a>
+        </li> 
+      </ul>
+	 
+    </div>
+  </nav>
+
+</header>
+<!--Main Navigation-->
+
+<div class="container" style="width:30%;padding-top:100px;">
+<form class="border border-light p-5">
+
+    <p class="h4 mb-4 text-center">Welcome Patient</p>
+
+    <input type="email" id="patient-email" class="form-control mb-4" placeholder="E-mail">
+
+    <input type="password" id="patient-password" class="form-control mb-4" placeholder="Password">
+
+    <div class="d-flex justify-content-between">
+        <div>
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="defaultLoginFormRemember">
+                <label class="custom-control-label" for="defaultLoginFormRemember">Remember me</label>
+            </div>
+        </div>
+        <div>
+            <a href="">Forgot password?</a>
+        </div>
+    </div>
+    <span style="display: none;" id="patient-login-result" ></span>
+    <button class="btn btn-info btn-block my-4" id="patient-login" type="submit">Sign in</button>
+
+    <div class="text-center">
+        <p>Not a member?
+            <a href="">Register</a>
+        </p>         
+    </div>
+</form>
+</div>
+</body>
+</html> 
